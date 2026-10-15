@@ -1,0 +1,56 @@
+
+
+STEP 1 Notes: ADS1115 over I2C
+
+
+Goal: Read a known voltage with the ADS1115 (16-bit ADC) through an Arduino
+Uno over I2C, then verify it with a multimeter and a logic analyzer.
+
+
+Parts:
+ 	Arduino Uno
+	ADS1115 breakout (header pins soldered)
+	Breadboard + jumper wires
+	AstroAI AM33D multimeter
+	HiLetgo 24 MHz 8-channel logic analyzer (PulseView)
+
+
+Row		ADS1115pin
+
+10		VDD
+11		GND
+12 		SCL
+13		SDA
+14		ADDR
+15 		unused
+16		A0	
+17 		unused
+18		unused	
+19		unused		
+
+
+
+Wiring:
+
+	ADS1115   Row	Arduinho    Why 
+			Uno
+
+	VDD	  10a   5V	    Power
+	GND	  11a   GND	    Common ref
+	SCL	  12a   A5	    I2C clock
+	SDA 	  13a   A4	    I2C data
+	ADDR	  14a   GND	    Sets I2C address to 0x48
+	A0 	  16a   3.3V        Known Test Voltage
+
+
+Logic Analayzer:
+
+
+	Logic analyzer	 Row	 Signal	    PulseView channel
+
+	CH2		 13b	 SDA	    D1
+	CH3		 12b	 SCL	    D2
+	GND		 11b	 GND        __ 
+
+
+
