@@ -1,0 +1,108 @@
+# Step 2 Notes: INA333 Instrumentation Amplifier (in progress)
+
+## Goal
+Verify the INA333 instrumentation amplifier on its own before adding filters
+and electrodes: apply a known small differential voltage, measure the output,
+and set the gain to about 10.
+
+## Status
+
+| Sub-step | Description | Status |
+|---|---|---|
+| 2a | Solder INA333 module, identify pins | Done |
+| 2b | Gain test with a known input, set gain ≈ 10 | Done (gain ≈ 9.2) |
+| 2c | Reference buffer, high-pass, gain stage, low-pass (MCP6002) | Waiting
+for op-amps |
+| 2d | Read INA333 output with ADS1115 | To do |
+| 2e | EMG signal from forearm electrodes | To do |
+
+## INA333 module (WCMCU-333)
+- On-board **3.3 V regulator**: VCC takes 5 V, the INA333 runs at 3.3 V.
+  Confirmed by measuring 3.3 V on the 3.3V pin.
+- On-board **VREF divider**: with nothing connected, the VREF pin reads ~1.63
+  V (mid-supply).
+- On-board **trimpot** sets the gain resistor R_G. Gain = 1 + 100 kΩ / R_G.
+- Because the chip runs at 3.3 V, the output swings 0–3.3 V and the reference
+  is ~1.65 V (not 2.5 V).
+
+## Breadboard placement
+Module straddles the center gap, label side up.
+
+| Row | Left (column d) | Right (column i) |
+|---|---|---|
+| 25 | VREF | GND |
+| 26 | VOUT | VCC |
+| 27 | 3.3V | VIN− |
+| 28 | GND | VIN+ |
+
+## Power
+| From | To |
+|---|---|
+| Arduino 5V | + rail |
+| Arduino GND | − rail |
+| + rail | INA333 VCC (j26), ADS1115 VDD (10a) |
+| − rail | INA333 GND (a28, j25), ADS1115 GND (11a), ADS1115 ADDR (b14) |
+
+## Test circuit (rows 40–46)
+A 1k/1k divider from the 3.3 V pin makes a stiff reference (~1.7 V). A
+10k/100Ω divider on top of it makes a test signal ~16 mV above the reference.
+
+| Part | From | To |
+|---|---|---|
+| Jumper (3.3 V) | row 27 left | e40 |
+| 1 kΩ | a40 | a42 |
+| 1 kΩ | b42 | b46 |
+| Jumper (GND) | a46 | b28 (INA333 GND row) |
+| 10 kΩ | c40 | c44 |
+| 100 Ω | e42 | e44 |
+| Jumper (VREF) | d42 | b25 |
+| Jumper (VIN−) | c25 | j27 |
+| Jumper (VIN+) | d44 | j28 |
+
+Nodes: row 40 = 3.3 V, row 42 = reference (~1.7 V), row 44 = test signal.
+
+## Results
+| Measurement | Value |
+|---|---|
+| INA333 3.3V pin | 3.30 V |
+| Reference (row 42) | 1.70 V |
+| Input difference (row 44 − row 42) | 16 mV |
+| Output difference (VOUT − reference) | 147 mV |
+| **Gain** | **≈ 9.2** |
+
+### Trimpot tuning
+Clockwise lowers the gain, counter-clockwise raises it. Gain rises very
+quickly near the low-resistance end (it saturated at ~1580 mV output after one
+90° turn), so the last adjustments were 10–15° steps.
+
+| Adjustment | Output (mV) | Gain |
+|---|---|---|
+| Factory setting | 45 | 2.8 |
+| 45° clockwise | 31 | 1.9 |
+| 90° counter-clockwise | 1582 (saturated) | >100 |
+| 30° clockwise | 34 | 2.1 |
+| 10° counter-clockwise | 47 | 2.9 |
+| 15° counter-clockwise | **147** | **9.2** |
+
+## Problems and fixes
+- **VREF read 3.3 V.** The reference jumper was in the wrong row (27 instead
+  of 32/42). Moved it.
+- **Strange readings from crossed resistor leads.** Resistors were crossing
+  each other diagonally and bare leads touched. Rebuilt the test circuit with
+every resistor vertical in its own column and short leads.
+- **VIN+ and VIN− left floating.** The output saturated at the rail. Added the
+  two missing input jumpers.
+- **Everything read 0 V.** The Arduino 5V/GND wire had come loose.
+- **Reference node read 3 V instead of 1.7 V.** The ground jumper was in the
+  lower half of the − rail, which is **split in the middle** on this
+breadboard. Moved the jumper to a known ground (INA333 GND row). Lesson:
+bridge the two rail halves or check continuity.
+- **Multimeter probes don't fit breadboard holes.** Touch the probe to a
+  component lead or jumper tip in the same row.
+
+## Next
+- Get MCP6002 op-amps (or MCP6004 / TLV2372 / LMC6482).
+- 2d: VOUT → ADS1115 A0, reference → A1, read the differential voltage in
+  firmware (expect ~147 mV).
+- 2e: first unfiltered EMG test with electrodes (battery/laptop unplugged from
+  mains).
